@@ -1,10 +1,7 @@
-name: Openwrt Build for JIDU6101 and JIDU6J01
+name: OpenWrt Build for JIDU6J01 (Normal Only)
 
 on:
-  push:
   workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * *" # At 12:00 AM
 
 permissions:
   contents: write
@@ -17,15 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         device:
-          - name: jidu6101
-            config: configs/.config-jidu6101
-          - name: jidu6101-mesh
-            config: configs/.config-jidu6101-mesh
-
-          - name: jidu6j01 # jidu6201/6401/6601/6701
+          - name: jidu6j01
             config: configs/.config-jidu6j01
-          - name: jidu6j01-mesh # jidu6201/6401/6601/6701
-            config: configs/.config-jidu6j01-mesh
 
     steps:
     - name: Checkout Code
@@ -87,7 +77,11 @@ jobs:
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "  📊 ccache Stats"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        staging_dir/host/bin/ccache -vv --show-stats
+        if [ -x staging_dir/host/bin/ccache ]; then
+          staging_dir/host/bin/ccache -vv --show-stats
+        else
+          echo "ccache executable not present; skipping stats"
+        fi
 
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -110,14 +104,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      # Only non-mesh builds go into the Release. Mesh builds still get
-      # built and uploaded as normal workflow Artifacts, just not released.
-      - name: Download JIDU6101 artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: openwrt-jidu6101
-          path: artifacts
-
       - name: Download JIDU6J01 artifact
         uses: actions/download-artifact@v4
         with:
@@ -137,4 +123,4 @@ jobs:
           name: "OpenWrt Build (Latest)"
           files: artifacts/**/*
           make_latest: true
-          body: "Automatically built OpenWrt firmware for JIDU6101 and JIDU6J01 (non-mesh). This release is replaced by each new build. Mesh builds are available under this run's Artifacts."
+          body: "Manually built OpenWrt firmware for JIDU6J01 (normal/non-mesh) only."
