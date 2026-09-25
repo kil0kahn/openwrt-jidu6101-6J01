@@ -37,11 +37,11 @@ for commit in $JIO_COMMITS; do
 done
 
 
-echo "==============================adding initramfs-factory.ubi artifact to JIDU6101 and JIDU6J01=============================="
-# Add initramfs-factory.ubi artifact to JIDU6101 and JIDU6J01
+echo "==============================adding initramfs-factory.ubi artifact to JIDU6J01=============================="
+# Add initramfs-factory.ubi artifact to JIDU6J01
 FILOGIC_MK="target/linux/mediatek/image/filogic.mk"
 
-for DEV in jiorouter_ax6000-jidu6101 jiorouter_ax6000-jidu6j01; do
+for DEV in jiorouter_ax6000-jidu6j01; do
   # Skip if this device already has the artifact (idempotent)
   if awk "/^define Device\/${DEV}\$/,/^endef/" "$FILOGIC_MK" | grep -q "initramfs-factory.ubi"; then
     echo "[$DEV] initramfs-factory.ubi already present, skipping"
@@ -65,7 +65,7 @@ for DEV in jiorouter_ax6000-jidu6101 jiorouter_ax6000-jidu6j01; do
     { print }
   ' "$FILOGIC_MK" > "${FILOGIC_MK}.tmp" && mv "${FILOGIC_MK}.tmp" "$FILOGIC_MK"
 done
-echo "==============================finished adding initramfs-factory.ubi artifact to JIDU6101 and JIDU6J01=============================="
+echo "==============================finished adding initramfs-factory.ubi artifact to JIDU6J01=============================="
 
 
 cat <<-EOF >> feeds.conf.default
@@ -76,6 +76,12 @@ EOF
 ./scripts/feeds install -a
 
 # Copy config and inject ccache dir dynamically
+if [ "$DEVICE_CONFIG" != "configs/.config-jidu6j01" ]; then
+  echo "ERROR: This workflow only supports the normal JIDU6J01 build."
+  echo "DEVICE_CONFIG=$DEVICE_CONFIG"
+  exit 1
+fi
+
 cp $REPO_DIR/${DEVICE_CONFIG} .config
 
 make defconfig
@@ -113,9 +119,8 @@ mkdir -p files/etc/uci-defaults
 
 # Determine model name based on which device config is being built
 case "$DEVICE_CONFIG" in
-  *jidu6101*) MODEL_NAME="JioRouter AX6000 JIDU6101" ;;
   *jidu6j01*) MODEL_NAME="JioRouter AX6000 JIDU6J01" ;;
-  *) MODEL_NAME="JioRouter AX6000" ;;
+  *) MODEL_NAME="JioRouter AX6000 JIDU6J01" ;;
 esac
 
 cat > files/etc/uci-defaults/99-custom-config <<'EOF'
